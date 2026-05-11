@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdCompanyUserMapper">
+
+    <select id="getLeaveData" resultType="com.lyentech.bdc.md.auth.model.entity.MdCompanyUsers">
+        SELECT A.email,B.employee_id employeeId
+        FROM `md_user` A
+        INNER JOIN md_company_users B
+        ON A.email = B.email AND B.is_on_job = 0
+        WHERE A.email != '' AND A.email IS NOT NULL
+    </select>
+
+    <select id="getDeptLeaderByUserEmail" resultType="com.lyentech.bdc.md.auth.model.entity.MdCompanyUsers">
+        SELECT *FROM `md_company_users`
+        WHERE dept_name=(SELECT dept_name FROM md_company_users WHERE email=#{email} LIMIT 1)
+        AND (post_name LIKE '%主任%'OR post_name LIKE '%院长%'OR post_name LIKE '%部长%' OR post_name LIKE '%经理%'OR post_name LIKE '%总监%' OR post_name LIKE '%主管%')
+        AND is_on_job=1 AND office_name=''
+        UNION ALL
+        SELECT *FROM `md_company_users`
+        WHERE dept_name=(SELECT dept_name FROM md_company_users WHERE email=#{email} LIMIT 1)
+        AND is_leader=1
+    </select>
+
+</mapper>

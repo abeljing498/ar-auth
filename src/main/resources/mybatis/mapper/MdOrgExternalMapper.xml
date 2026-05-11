@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdOrgExternalMapper">
+
+    <select id="getOrgByCid" resultType="com.lyentech.bdc.md.auth.model.vo.OrgVO">
+        SELECT org.*, moe.custom_id
+        FROM md_org_external moe
+        LEFT JOIN md_org org on  moe.org_id = org.id
+        WHERE moe.tenant_id = #{tenantId}
+        AND moe.custom_id = #{customId}
+    </select>
+</mapper>

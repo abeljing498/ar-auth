@@ -1,0 +1,25 @@
+package com.lyentech.bdc.md.auth.dao;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lyentech.bdc.md.auth.model.entity.MdLoginLog;
+import com.lyentech.bdc.md.auth.model.entity.MdTenantLoginLog;
+import com.lyentech.bdc.md.auth.model.param.LoginLogParam;
+import com.lyentech.bdc.md.auth.model.vo.LoginLogVO;
+import com.lyentech.bdc.md.auth.model.vo.TenantLoginLogVO;
+import org.apache.ibatis.annotations.Param;
+
+/**
+ * @Author :yan
+ * @Date :Create in 2022/11/25
+ * @Description :
+ */
+
+public interface MdTenantLoginLogMapper extends BaseMapper<MdTenantLoginLog> {
+
+    IPage<TenantLoginLogVO> selectLoginLog(@Param("page") Page<TenantLoginLogVO> page,
+                                     @Param("loginLogParam") LoginLogParam loginLogParam);
+
+
+}

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.TenantRoleMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.TenantRole">
+        <result column="app_id" property="appId" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="role_id" property="roleId" />
+    </resultMap>
+
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        app_id, tenant_id, role_id
+    </sql>
+
+    <insert id="insertList">
+        INSERT INTO
+        md_tenant_role
+        (app_id,tenant_id,role_id)
+        VALUES
+        <foreach collection="roleUserList" item="roleUser" open="" close="" separator=",">
+            (#{roleUser.appId},#{roleUser.tenantId},#{roleUser.roleId})
+        </foreach>
+    </insert>
+
+    <select id="getRoleListByAppId" resultType="com.lyentech.bdc.md.auth.model.vo.RoleVO">
+        SELECT mr.id as id , name as name, description as description, mu.nickname as creator, mr.create_time as createTime, status as status
+        FROM md_role mr
+        LEFT JOIN md_tenant_role mtr ON mtr.role_id = mr.id
+        LEFT JOIN md_user mu ON mr.create_by = mu.id
+        WHERE mr.app_id = #{appId}
+        AND mtr.tenant_id = #{tenantId}
+        <if test="roleName != null and roleName != ''">
+            AND  (mr.name like LOWER(concat('%',#{roleName},'%')) OR mr.name like UPPER(concat('%',#{roleName},'%')))
+        </if>
+        GROUP BY mr.id
+        ORDER BY mr.create_time ASC
+    </select>
+
+    <select id="getRoleListByTenantId" resultType="com.lyentech.bdc.md.auth.model.entity.MdRole">
+        SELECT mr.id AS id, mr.name AS name, mr.description AS description, mr.app_id AS app_id, mr.status as status, mr.create_time as createTime
+        FROM md_role mr
+        JOIN md_tenant_role mtr ON mr.id = mtr.role_id
+        WHERE mtr.tenant_id = #{tenantId}
+        AND mtr.app_id = #{appId}
+        GROUP BY mr.id
+        ORDER BY mr.create_time ASC
+    </select>
+
+</mapper>

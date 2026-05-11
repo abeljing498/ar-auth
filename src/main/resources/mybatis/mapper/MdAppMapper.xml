@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdAppMapper">
+
+    <sql id="md_app_table">
+        md_app
+    </sql>
+
+    <sql id="md_app_select_columns">
+        id, secret, authorized_grant_types, authorities, scopes, auto_approve_scopes, access_token_validity, refresh_token_validity, callback_urls, homepage_url, login_kick
+    </sql>
+
+    <resultMap id="MdAppResultMap" type="com.lyentech.bdc.md.auth.model.entity.MdApp">
+        <id column="id" jdbcType="VARCHAR" property="clientId"/>
+        <result column="secret" jdbcType="VARCHAR" property="clientSecret"/>
+        <result column="authorized_grant_types" jdbcType="VARCHAR" property="authorizedGrantTypes"
+                typeHandler="com.lyentech.bdc.mybatis.typehandler.CommaSeparatedStringCollectionTypeHandler"/>
+        <result column="authorities" jdbcType="VARCHAR" property="authorities"
+                typeHandler="com.lyentech.bdc.md.auth.common.mybatis.typehandler.CommaSeparatedStringGrantAuthorityCollectionTypeHandler"/>
+        <result column="scopes" jdbcType="VARCHAR" property="scope"
+                typeHandler="com.lyentech.bdc.mybatis.typehandler.CommaSeparatedStringCollectionTypeHandler"/>
+        <result column="auto_approve_scopes" jdbcType="VARCHAR" property="autoApproveScopes"
+                typeHandler="com.lyentech.bdc.mybatis.typehandler.CommaSeparatedStringCollectionTypeHandler"/>
+        <result column="access_token_validity" property="accessTokenValiditySeconds"/>
+        <result column="refresh_token_validity" property="refreshTokenValiditySeconds"/>
+        <result column="callback_urls" jdbcType="VARCHAR" property="registeredRedirectUri"
+                typeHandler="com.lyentech.bdc.mybatis.typehandler.CommaSeparatedStringCollectionTypeHandler"/>
+        <result column="homepage_url" jdbcType="VARCHAR" property="homepageUrl"/>
+        <result column="login_kick" jdbcType="BIGINT" property="loginKick"/>
+    </resultMap>
+    <resultMap id="MdAppHeadMap" type="com.lyentech.bdc.md.auth.model.param.HeadParam">
+        <result column="head_name" jdbcType="VARCHAR" property="headName"/>
+        <result column="head_email" jdbcType="VARCHAR" property="headEmail"/>
+        <result column="head_phone" jdbcType="VARCHAR" property="headPhone"/>
+    </resultMap>
+
+    <select id="getById" parameterType="string" resultMap="MdAppResultMap">
+        SELECT
+        <include refid="md_app_select_columns"/>
+        FROM
+        <include refid="md_app_table"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="getHomepage" parameterType="string" resultType="string">
+        SELECT homepage_url
+        FROM
+        <include refid="md_app_table"/>
+        WHERE id = #{id}
+    </select>
+    <select id="getAppManagerSetPasswordMsg" parameterType="string" resultType="string">
+        SELECT forget_password_remark
+        FROM
+        <include refid="md_app_table"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="getAppInitialPassword" parameterType="string" resultType="string">
+        SELECT app_initial_password
+        FROM
+        <include refid="md_app_table"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="getHead"  resultType="com.lyentech.bdc.md.auth.model.vo.HeadListVO">
+        SELECT name , homepage_url as homePageUrl, app_remark as appRemark
+        FROM
+        <include refid="md_app_table"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="getSecret" parameterType="string" resultType="string">
+        SELECT secret
+        FROM
+        <include refid="md_app_table"/>
+        WHERE id = #{appKey}
+    </select>
+
+    <select id="getCreateName" parameterType="string" resultType="java.lang.Long">
+        select mu.id
+        from md_app ma
+        left join md_user mu on ma.create_by = mu.id
+        where ma.id = #{appId}
+    </select>
+</mapper>

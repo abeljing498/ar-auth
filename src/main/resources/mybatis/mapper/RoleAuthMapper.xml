@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.RoleAuthMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.RoleAuth">
+        <result column="role_id" property="roleId" />
+        <result column="auth_id" property="authId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        role_id, auth_id
+    </sql>
+    <insert id="insertList">
+        INSERT INTO md_role_auth (role_id,auth_id)
+        VALUES
+        <foreach collection="roleAuthList" item="roleAuth" open="" close="" separator=",">
+            (#{roleAuth.roleId}, #{roleAuth.authId})
+        </foreach>
+    </insert>
+    <select id="getRoleId" resultType="java.lang.Long">
+        SELECT mra.auth_id
+        FROM md_role_auth mra
+                 left JOIN md_tenant_role mtr
+                           on mra.role_id = mtr.role_id
+        where mra.role_id = #{roleId}
+          AND mtr.tenant_id = #{tenantId}
+    </select>
+
+</mapper>

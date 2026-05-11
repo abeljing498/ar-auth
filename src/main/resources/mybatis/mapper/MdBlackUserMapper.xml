@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdBlackUserMapper">
+    <select id="getUserList" resultType="com.lyentech.bdc.md.auth.model.vo.MdBlackUserVO">
+        SELECT mbu.id AS id, mbu.user_id as userId, mbu.reason AS reason
+        ,IF(LENGTH(mu.phone) = 11,CONCAT(SUBSTRING(mu.phone, 1, 3), '****', SUBSTRING(mu.phone, 8, 4)), mu.phone) AS phone
+        , mu.nickname AS nickname,mu.email AS email,
+        mbu.create_time as createTime,mbu.operator_nickname AS operName
+        FROM md_black_user mbu
+        LEFT JOIN md_user mu ON mbu.user_id = mu.id
+        WHERE mbu.app_id = #{blackUserListParam.appId}
+        <if test="blackUserListParam.beginTime != null and blackUserListParam.beginTime != ''">
+            AND mbu.create_time > #{blackUserListParam.beginTime}
+        </if>
+        <if test="blackUserListParam.endTime != null and blackUserListParam.endTime != ''">
+            AND #{blackUserListParam.endTime} > mbu.create_time
+        </if>
+        <if test="blackUserListParam.reason != null and blackUserListParam.reason != ''">
+            AND (mbu.reason like concat('%',#{blackUserListParam.reason},'%')
+            OR mbu.reason like LOWER(concat('%',#{blackUserListParam.reason},'%'))
+            OR mbu.reason like UPPER(concat('%',#{blackUserListParam.reason},'%')))
+        </if>
+        <if test="blackUserListParam.keyword != null and blackUserListParam.keyword != ''">
+            AND (mu.nickname like concat('%',#{blackUserListParam.keyword},'%')
+            OR mu.nickname like LOWER(concat('%',#{blackUserListParam.keyword},'%'))
+            OR mu.nickname like UPPER(concat('%',#{blackUserListParam.keyword},'%'))
+            OR mu.phone like concat('%',#{blackUserListParam.keyword},'%')
+            OR mu.email like concat('%',#{blackUserListParam.keyword},'%')
+            OR mu.email like LOWER(concat('%',#{blackUserListParam.keyword},'%'))
+            OR mu.email like UPPER(concat('%',#{blackUserListParam.keyword},'%')))
+        </if>
+        ORDER BY mbu.create_time DESC
+    </select>
+</mapper>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.UserChannelMapper">
+    <select id="getChannelListByUserChannel" resultType="com.lyentech.bdc.md.auth.model.entity.UserChannel">
+        SELECT *,C.name groupName FROM `md_user_channel` A
+        LEFT JOIN `md_user_channel_related` B ON A.`id`=B.`channel_id` AND A.app_id=B.app_id AND A.tenant_id=B.tenant_id
+        LEFT JOIN `md_user_channel_group` C ON A.`group_id`=C.`id`
+        WHERE A.app_id=#{appId} AND A.tenant_id=#{tenantId}
+        AND B.`user_id`=#{userId}
+        <if test="name != null and name != ''">
+            AND  A.name like concat('%',#{name},'%')
+        </if>
+        GROUP BY A.id
+    </select>
+
+</mapper>

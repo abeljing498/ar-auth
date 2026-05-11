@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdUserMapper">
+
+    <resultMap id="UserResultMap" type="MdUser">
+        <id property="id" column="id"/>
+        <result property="deleted" column="is_deleted"/>
+    </resultMap>
+    <resultMap id="UserDetailMap" type="UserDetailsVO">
+        <id property="id" jdbcType="BIGINT" column="id"/>
+        <result property="nickname" jdbcType="VARCHAR" column="nickname"/>
+        <result property="phone" jdbcType="VARCHAR" column="phone"/>
+        <result property="email" jdbcType="VARCHAR" column="email"/>
+        <result property="tenantId" jdbcType="BIGINT" column="tenantId"/>
+        <result property="createTime" jdbcType="VARCHAR" column="createTime"/>
+        <result property="pinyin" jdbcType="VARCHAR" column="pinyin"/>
+    </resultMap>
+    <resultMap id="UserAppRolesMap" type="UserAppRolesVO">
+        <id property="appId" jdbcType="VARCHAR" column="appId"/>
+        <id property="appName" jdbcType="VARCHAR" column="appName"/>
+        <result property="tenantId" jdbcType="BIGINT" column="tenantId"/>
+        <result property="tenantName" jdbcType="VARCHAR" column="tenantName"/>
+        <result property="email" jdbcType="VARCHAR" column="email"/>
+        <result property="phone" jdbcType="VARCHAR" column="phone"/>
+        <result property="userId" jdbcType="BIGINT" column="userId"/>
+        <result property="nickname" jdbcType="VARCHAR" column="nickname"/>
+    </resultMap>
+    <resultMap id="UserListMap" type="UserListVO">
+        <id property="id" jdbcType="BIGINT" column="id"/>
+        <result property="nickname" jdbcType="VARCHAR" column="nickname"/>
+        <result property="phone" jdbcType="VARCHAR" column="phone"/>
+        <result property="email" jdbcType="VARCHAR" column="email"/>
+        <result property="createTime" jdbcType="VARCHAR" column="createTime"/>
+        <collection property="roleIdList" javaType="list" ofType="long">
+            <result jdbcType="BIGINT" column="roleIdList"/>
+        </collection>
+        <collection property="roleNameList" javaType="list" ofType="string">
+            <result jdbcType="VARCHAR" column="roleNameList"/>
+        </collection>
+    </resultMap>
+    <sql id="md_user_table">
+        md_user
+    </sql>
+
+    <select id="searchByPhone" parameterType="string" resultType="com.lyentech.bdc.md.auth.model.entity.MdUser">
+        SELECT id, phone, password, nickname, avatar, email, account
+        FROM
+        <include refid="md_user_table"/>
+        WHERE is_deleted = 0 AND phone = #{phone}
+        LIMIT 1
+    </select>
+
+    <select id="searchByEmail" parameterType="string" resultType="com.lyentech.bdc.md.auth.model.entity.MdUser">
+        SELECT id, phone, password, nickname, avatar, email, account
+        FROM
+        <include refid="md_user_table"/>
+        WHERE is_deleted = 0 AND email LIKE CONCAT (#{email})
+        LIMIT 1
+    </select>
+
+    <select id="searchByAccount" parameterType="string" resultType="com.lyentech.bdc.md.auth.model.entity.MdUser">
+        SELECT id, phone, password, nickname, avatar, email, account
+        FROM
+        <include refid="md_user_table"/>
+        WHERE is_deleted = 0 AND account = #{account}
+        LIMIT 1
+    </select>
+
+    <select id="searchByPhoneIncludeDeleted" parameterType="string" resultMap="UserResultMap">
+        SELECT id, is_deleted
+        FROM
+        <include refid="md_user_table"/>
+        WHERE phone = #{phone}
+        LIMIT 1
+    </select>
+
+    <update id="register">
+        UPDATE
+        <include refid="md_user_table"/>
+        SET is_deleted = 0, nickname = #{nickname}, password = #{password}
+        WHERE id = #{id}
+    </update>
+
+    <select id="searchUserList" resultMap="UserDetailMap">
+        SELECT A.user_id id,B.nickname,B.phone, A.create_time AS createTime,B.email
+        ,B.account,B.pinyin,A.status,A.tenant_id tenantId
+        FROM  md_user_org A LEFT JOIN md_user B ON A.user_id=B.id
+        WHERE A.tenant_id=#{tenantId}
+        <if test="orgId != null">
+            AND A.org_id = #{orgId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (( B.phone like concat('%',#{keyword},'%'))
+            OR ( B.email like concat('%',#{keyword},'%'))
+            OR (B.account LIKE CONCAT('%',#{keyword},'%'))
+            OR ((B.nickname like LOWER(concat('%',#{keyword},'%'))
+            OR B.nickname like UPPER(concat('%',#{keyword},'%'))))
+            OR ((B.pinyin like LOWER(concat('%',#{keyword},'%'))
+            OR B.pinyin like UPPER(concat('%',#{keyword},'%'))))
+            OR ((B.pinyins like LOWER(concat('%',#{keyword},'%'))
+            OR B.pinyins like UPPER(concat('%',#{keyword},'%')))))
+        </if>
+
+        <if test="account != null and account != ''">
+            AND ((BINARY B.account like concat('%',#{account},'%')))
+        </if>
+        <if test="userState != null">
+            AND A.status=#{userState}
+        </if>
+        GROUP BY A.user_id
+        ORDER BY A.create_time DESC
+
+    </select>
+
+    <select id="getUserAppRoleList" resultMap="UserAppRolesMap">
+        SELECT  C.id appId,C.name appName, E.id userId,E.nickname,E.email,A.tenant_id tenantId,D.name tenantName
+        FROM `md_user_tenant_role` A
+        LEFT JOIN `md_role` B ON A.role_id=B.id
+        LEFT JOIN `md_app` C ON A.app_id=C.id
+        LEFT JOIN `md_tenant` D ON A.tenant_id=D.id
+        LEFT JOIN md_user E ON A.user_id=E.id
+        where E.id is not null AND B.status=1
+        <if test="keyword != null and keyword != ''">
+            AND (
+            E.phone    LIKE CONCAT('%', #{keyword}, '%')
+            OR ((E.email like LOWER(concat('%',#{keyword},'%'))
+            OR E.email like UPPER(concat('%',#{keyword},'%'))))
+            OR LOWER(E.nickname) LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        GROUP BY A.app_id,A.tenant_id,A.user_id
+    </select>
+
+    <select id="getOrgNameByUserId" resultType="com.lyentech.bdc.md.auth.model.vo.OrgNewVO">
+        SELECT mg.name as orgName, mg.id as orgId, moe.custom_id as customId
+        FROM md_org
+        mg
+         LEFT JOIN md_user_org rg ON mg.id = rg.org_id
+         LEFT JOIN md_org_external moe ON mg.id = moe.org_id
+        WHERE rg.user_id=#{id}
+        <if test="orgId != null and orgId !=0">
+            AND rg.org_id = #{orgId}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND rg.tenant_id = #{tenantId}
+        </if>
+        GROUP BY mg.id
+    </select>
+
+    <select id="getAppNameByUserId" resultType="java.lang.String">
+        SELECT app.name
+        FROM md_app_member
+        ma
+        JOIN md_app app ON ma.app_id = app.id
+        WHERE ma.user_id = #{id}
+        GROUP BY app.id
+    </select>
+    <select id="selectUserListByOrgId" resultType="com.lyentech.bdc.md.auth.model.vo.UserDetailsVO">
+        SELECT mu.phone, mu.nickname, mu.create_time, mu.email
+        FROM
+        md_user
+        mu
+        JOIN md_user_org rg ON mu.id = rg.user_id
+        AND mu.is_deleted = 0
+        JOIN md_role mr ON mr.status = 0 AND rg.role_id = mr.id
+        WHERE rg.org_id in
+        <foreach collection="orgIds" item="orgId" open="(" close=")" separator=",">
+            #{orgId}
+        </foreach>
+        <if test="phone != null and phone != ''">
+            AND (BINARY mu.phone like concat('%',#{phone},'%'))
+        </if>
+        <if test="name != null and name != ''">
+            AND (BINARY mu.nickname like concat('%',#{name},'%'))
+        </if>
+        GROUP BY mu.id
+    </select>
+    <select id="selectUserList" resultMap="UserListMap">
+        SELECT mu.id AS id, mu.nickname AS nickname, mu.phone AS phone, mu.create_time AS createTime, mu.email AS email,
+         r.id AS roleIdList,  r.name AS roleNameList
+        FROM
+        md_user
+        mu
+        LEFT JOIN md_user_org muo ON muo.user_id = mu.id
+        LEFT JOIN md_user_tenant_role mr ON muo.user_id = mr.user_id
+        AND mr.app_id = #{appId}
+        AND mr.tenant_id = #{tenantId}
+        LEFT JOIN md_role r ON mr.role_id = r.id
+        WHERE muo.tenant_id = #{tenantId}
+        <if test="orgId != null">
+            AND muo.org_id = #{orgId}
+        </if>
+        <if test="phone != null and phone != ''">
+            AND (BINARY mu.phone like concat('%',#{phone},'%'))
+        </if>
+        <if test="name != null and name != ''">
+            AND (mu.nickname like LOWER(concat('%',#{name},'%')) OR mu.nickname like UPPER(concat('%',#{name},'%')))
+        </if>
+        ORDER BY muo.create_time DESC
+    </select>
+    <select id="selectUserByTenantId" resultType="com.lyentech.bdc.md.auth.model.vo.TenantUserVO">
+        SELECT mu.id AS id, muo.org_id AS orgId, mu.nickname AS name,mu.phone AS phone,mu.email AS email
+        FROM md_user mu
+        LEFT JOIN md_user_org muo ON muo.user_id = mu.id
+        where muo.tenant_id = #{tenantId}
+        <if test="orgId != null and orgId != ''">
+            AND muo.org_id = #{orgId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND ((BINARY mu.phone like concat('%',#{keyword},'%'))
+            OR (BINARY mu.email like concat('%',#{keyword},'%'))
+            OR (BINARY mu.nickname like LOWER(concat('%',#{keyword},'%')) OR mu.nickname like UPPER(concat('%',#{keyword},'%'))))
+        </if>
+        AND mu.is_deleted = 0
+        GROUP BY mu.id
+        ORDER BY muo.create_time desc
+    </select>
+
+    <resultMap id="UserInfoMap" type="UserInfoVO">
+        <id property="id" jdbcType="BIGINT" column="id"/>
+        <result property="nickname" jdbcType="VARCHAR" column="nickname"/>
+        <result property="phone" jdbcType="VARCHAR" column="phone"/>
+        <result property="email" jdbcType="VARCHAR" column="email"/>
+        <result property="account" jdbcType="VARCHAR" column="account"/>
+        <result property="logo" jdbcType="VARCHAR" column="logo"/>
+    </resultMap>
+
+    <select id="selectByKey" resultMap="UserInfoMap">
+        SELECT mu.id, mu.phone, mu.nickname, mu.email, mu.account, GROUP_CONCAT(muo.org_id SEPARATOR ',') AS logo
+        FROM md_user mu
+            JOIN md_user_org muo ON muo.user_id = mu.id
+        WHERE mu.is_deleted = 0
+          AND muo.tenant_id = #{tenantId}
+        <if test="type != null and 'id' == type ">
+            AND mu.id = #{key}
+        </if>
+        <if test="type != null and 'phone' == type">
+            AND mu.phone = #{key}
+        </if>
+        <if test="type != null and 'email' == type">
+            AND mu.email = #{key}
+        </if>
+
+    </select>
+
+</mapper>

@@ -1,0 +1,9 @@
+spring.application.name=ar-auth-service
+spring.cloud.nacos.config.server-addr=172.16.52.74:8848
+spring.cloud.nacos.config.username=nacos
+spring.cloud.nacos.config.password=nacos
+spring.cloud.nacos.config.refresh-enabled=true
+spring.cloud.nacos.config.file-extension=properties
+spring.cloud.nacos.config.namespace=db18cd97-04ec-47bc-bea0-0c0b9bd6b79b
+spring.cloud.nacos.config.group=dev
+spring.profiles.active=dev

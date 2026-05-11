@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.OrgMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.Org">
+        <id column="id" property="id"/>
+        <result column="pid" property="pid"/>
+        <result column="director" property="director"/>
+        <result column="phone" property="phone"/>
+        <result column="description" property="description"/>
+        <result column="name" property="name"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, pid, director, phone, decription, name, tenant_id, create_time, update_time
+    </sql>
+
+    <resultMap id="orgResultMap" type="com.lyentech.bdc.md.auth.model.vo.OrgTree">
+        <id property="id" column="id"/>
+        <result property="pid" column="pid"/>
+        <result property="name" column="name"/>
+        <result property="height" column="height"/>
+        <result property="orgOrder" column="orgOrder"/>
+        <result property="director" column="director"/>
+        <result property="phone" column="phone"/>
+        <result property="createTime" column="createTime"/>
+        <result property="updateTime" column="updateTime"/>
+        <result property="tenantId" column="tenantId"/>
+        <result property="customId" column="custom_id"/>
+        <result property="orgPinyin" column="orgPinyin"/>
+        <result property="orgPinyin2" column="orgPinyin2"/>
+        <result property="description" column="description"/>
+        <collection property="userNum" column="id"
+                    select="com.lyentech.bdc.md.auth.dao.MdUserOrgMapper.countOrgUser"/>
+    </resultMap>
+    <resultMap id="rpmResultMap" type="com.lyentech.bdc.md.auth.model.vo.OrgUserTree">
+        <id property="id" column="id"/>
+        <result property="pid" column="pid"/>
+        <result property="name" column="name"/>
+        <result property="height" column="height"/>
+        <result property="tenantId" column="tenantId"/>
+        <result property="customId" column="customId"/>
+        <result property="orgPinyin" column="orgPinyin"/>
+        <result property="orgPinyin2" column="orgPinyin2"/>
+        <collection property="userList" column="id"
+                    select="com.lyentech.bdc.md.auth.dao.MdUserOrgMapper.listUsersById"/>
+    </resultMap>
+    <select id="getByTenantId" resultMap="orgResultMap">
+        SELECT org.id , org.pid, org.name, org.height, org.tenant_id as tenantId,org.create_time as createTime
+        ,org.update_time as updateTime,
+        org.description,
+        org.org_order as orgOrder ,moe.custom_id, moh.director, moh.phone, org.org_pinyin AS orgPinyin, org.org_pinyins
+        AS orgPinyin2
+        FROM md_org org
+        LEFT JOIN md_org_external moe on org.id = moe.org_id
+        LEFT JOIN md_org_head moh on org.id = moh.org_id
+        WHERE org.tenant_id = #{tenantId}
+        <if test="orgIds != null">
+            AND org.id IN
+            <foreach collection="orgIds" item="orgId" open="(" close=")" separator=",">
+                #{orgId}
+            </foreach>
+        </if>
+        ORDER BY org.org_order , org.create_time
+    </select>
+    <select id="getFirstByTenantIds" resultMap="orgResultMap">
+        SELECT org.id , org.pid, org.name, org.height, org.tenant_id as tenantId,org.create_time as createTime
+        ,org.update_time as updateTime,
+        org.description,
+        org.org_order as orgOrder ,moe.custom_id, moh.director, moh.phone, org.org_pinyin AS orgPinyin, org.org_pinyins
+        AS orgPinyin2
+        FROM md_org org
+        LEFT JOIN md_org_external moe on org.id = moe.org_id
+        LEFT JOIN md_org_head moh on org.id = moh.org_id
+        WHERE org.tenant_id = #{tenantId} and org.pid=#{companyId}
+        <if test="orgIds != null">
+            AND org.id IN
+            <foreach collection="orgIds" item="orgId" open="(" close=")" separator=",">
+                #{orgId}
+            </foreach>
+        </if>
+        ORDER BY org.org_order , org.create_time
+    </select>
+
+    <select id="getSubId" resultType="java.lang.Long">
+        SELECT id
+        FROM
+        (
+        SELECT
+        @ids AS ids,
+        (
+        SELECT @ids := GROUP_CONCAT(id)
+        FROM md_org
+        WHERE FIND_IN_SET( pid, @ids ) ) AS cids
+        FROM
+        md_org,
+        (SELECT@ids := #{id} ) b
+        WHERE @ids IS NOT NULL
+        ) t,
+        md_org mo
+        WHERE FIND_IN_SET( mo.id, ids )
+    </select>
+
+    <select id="getMeOrg" resultType="com.lyentech.bdc.md.auth.model.vo.OrgVO">
+        SELECT org.*, moe.custom_id AS customId
+        FROM md_org org
+        LEFT JOIN md_org_external moe on org.id = moe.org_id
+        WHERE org.tenant_id = #{tenantId}
+        AND org.id = #{id}
+    </select>
+    <select id="getParentOrg" resultType="com.lyentech.bdc.md.auth.model.vo.OrgVO">
+        SELECT org.*, moe.custom_id AS customId
+        FROM md_org org
+        LEFT JOIN md_org_external moe on org.id = moe.org_id
+        WHERE org.tenant_id = #{tenantId}
+        AND org.pid = #{pid}
+        AND org.name = #{name}
+        limit 1
+    </select>
+    <select id="getOrgByName" resultType="com.lyentech.bdc.md.auth.model.vo.OrgVO">
+        SELECT org.*, moe.custom_id AS customId
+        FROM md_org org
+        LEFT JOIN md_org_external moe on org.id = moe.org_id
+        WHERE org.tenant_id = #{tenantId}
+        AND org.name = #{name}
+    </select>
+
+    <select id="getTreeAndUser" resultMap="rpmResultMap">
+        SELECT org.id , org.pid, org.name, org.height, org.tenant_id as tenantId,
+        moe.custom_id, org.org_pinyin AS orgPinyin, org.org_pinyins AS orgPinyin2
+        FROM md_org org
+        LEFT JOIN md_org_external moe on org.id = moe.org_id
+        WHERE org.tenant_id = #{tenantId}
+        <if test="orgIds != null">
+            and org.id in
+            <foreach collection="orgIds" item="orgId" open="(" close=")" separator=",">
+                #{orgId}
+            </foreach>
+        </if>
+        ORDER BY org.org_order ASC ,org.create_time
+    </select>
+
+    <select id="getOrgById" resultType="com.lyentech.bdc.md.auth.model.vo.OrgNewVO">
+        SELECT org.name AS orgName, org.id AS orgId, moe.custom_id AS customId
+        FROM md_org org join md_org_external moe on org.id = moe.org_id
+        WHERE
+        <if test="orgId != null">
+            org.id in
+            <foreach item="id" collection='orgId.split(",")' separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+        ORDER BY org.org_order ASC ,org.create_time
+    </select>
+
+</mapper>

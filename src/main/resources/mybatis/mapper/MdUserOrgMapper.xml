@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdUserOrgMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.MdUserOrg">
+        <result column="user_id" property="userId"/>
+        <result column="org_id" property="orgId"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="status" property="status"/>
+
+    </resultMap>
+    <resultMap id="StatusCountMap" type="com.lyentech.bdc.md.auth.model.vo.StatusCountVO">
+        <result column="status" property="status"/>
+        <result column="cnt" property="cnt"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        user_id, org_id, role_id,status
+    </sql>
+
+    <select id="getByOrgId" resultType="java.lang.Long">
+        SELECT user_id
+        FROM
+        md_user_org rg
+        JOIN md_user us ON (rg.user_id = us.id)
+        WHERE rg.org_id = #{orgId}
+        AND us.phone = #{phone}
+    </select>
+
+    <select id="selectUser" resultType="java.lang.Long">
+        SELECT user_id
+        FROM
+        md_user_org rg
+        JOIN md_user us ON (rg.user_id = us.id)
+        WHERE rg.org_id != #{orgId}
+        AND us.phone = #{phone}
+        AND us.nickname != #{name}
+        GROUP BY user_id
+    </select>
+    <select id="selectUserByEmail" resultType="java.lang.Long">
+        SELECT user_id
+        FROM md_user_org rg
+        RIGHT JOIN md_user us ON (rg.user_id = us.id)
+        WHERE rg.org_id != #{orgId}
+        AND us.phone = #{phone}
+        AND us.email != #{email}
+        GROUP BY user_id
+    </select>
+    <delete id="deleteUser">
+        DELETE
+        FROM md_user_org
+        WHERE org_id = #{orgId}
+    </delete>
+    <select id="getOrgInfo" resultType="com.lyentech.bdc.md.auth.model.vo.OrgNewVO">
+        SELECT muo.org_id as orgId, mo.name as orgName,ex.custom_id customId
+        FROM md_user_org muo
+        LEFT JOIN md_org mo ON muo.org_id = mo.id
+        LEFT JOIN `md_org_external` ex ON muo.org_id=ex.org_id
+        WHERE muo.user_id = #{userId}
+        AND muo.tenant_id = #{tenantId}
+    </select>
+    <select id="getUserIds" resultType="java.lang.Long">
+        SELECT user_id
+        FROM md_user_org rg
+        WHERE rg.org_id = #{orgId}
+        AND rg.tenant_id = #{tenantId}
+    </select>
+    <select id="getOrgIds" resultType="java.lang.Long">
+        SELECT org_id
+        FROM md_user_org rg
+        WHERE rg.user_id = #{userId}
+        AND rg.tenant_id = #{tenantId}
+    </select>
+    <select id="existUserInAppKey" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM md_app_tenant mat
+        LEFT JOIN md_user_org muo ON mat.tenant_id = muo.tenant_id
+        AND mat.app_id = #{appKey}
+        WHERE muo.user_id = #{userId}
+    </select>
+
+    <update id="updateByd">
+        update md_user_org rg
+        <set>
+            <if test="time != null">
+                rg.create_time = #{time}
+            </if>
+        </set>
+        where rg.user_id = #{userId}
+    </update>
+
+    <select id="listUsersById" resultType="com.lyentech.bdc.md.auth.model.vo.OrgUserVO">
+        SELECT rg.user_id as userId, us.nickname as userName, us.phone as phone, us.email as email,
+        us.pinyin as userPinyin, us.pinyins as userPinyins,us.account
+        FROM
+        md_user_org rg
+        JOIN md_user us ON (rg.user_id = us.id)
+        WHERE rg.org_id = #{id}
+        ORDER BY rg.create_time DESC
+    </select>
+
+    <select id="countOrgUser" resultType="java.lang.Long">
+        SELECT COUNT(distinct muo.user_id)
+        FROM md_user_org muo
+        WHERE muo.org_id = #{id}
+    </select>
+    <select id="getUserStatusNum" resultMap="StatusCountMap">
+        select status,COUNT(1) AS cnt from (
+        select * from md_user_org A
+        WHERE A.tenant_id = #{tenantId}
+        <if test="orgIds != null">
+            AND A.org_id IN
+            <foreach collection="orgIds" item="orgId" open="(" close=")" separator=",">
+                #{orgId}
+            </foreach>
+        </if>
+        GROUP BY user_id
+        ) as T
+        GROUP BY status
+    </select>
+
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdMenuMapper">
+
+    <sql id="md_menu_table">
+        md_menu
+    </sql>
+
+    <resultMap id="MenuResultMap" type="com.lyentech.bdc.md.auth.model.entity.MdMenu">
+        <id property="id" column="id"/>
+        <result property="path" column="path"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="meta.title" column="title"/>
+        <result property="meta.isMenu" column="is_menu"/>
+        <result property="sign" column="button_sign"/>
+        <result property="backlink" column="backlink"/>
+        <result property="icon" column="icon"/>
+        <result property="type" column="type"/>
+        <result property="menuOrder" column="menu_order"/>
+    </resultMap>
+
+    <select id="getByRoleId" parameterType="long" resultMap="MenuResultMap">
+        SELECT m.id, m.title, m.path, m.is_menu, m.parent_id, m.button_sign, m.backlink, m.icon, m.menu_order, m.type
+        FROM
+        <include refid="md_menu_table"/>
+        m
+        LEFT JOIN md_auth_menu_permission mamp ON (m.id = mamp.menu_id)
+        LEFT JOIN md_role_auth mra ON (mamp.auth_id = mra.auth_id)
+        LEFT JOIN md_auth ma ON (mra.auth_id = ma.id)
+        WHERE mra.role_id = #{roleId} AND ma.status = 1
+        group by m.id
+    </select>
+
+    <select id="getByAppId" parameterType="string" resultMap="MenuResultMap">
+        SELECT id, title, path, is_menu, parent_id, button_sign, backlink,icon,type,menu_order
+        FROM
+        <include refid="md_menu_table"/>
+        WHERE app_id = #{appId}
+        <if test="opened != null">
+            AND is_opened = #{opened}
+        </if>
+    </select>
+</mapper>

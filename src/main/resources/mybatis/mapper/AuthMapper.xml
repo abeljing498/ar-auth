@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.AuthMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.Auth">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <resultMap id="GroupAuthMap" type="com.lyentech.bdc.md.auth.model.vo.AuthVO">
+        <id column="groupId" jdbcType="VARCHAR" property="groupId"/>
+        <result column="groupName" jdbcType="VARCHAR" property="groupName"/>
+        <collection javaType="list" ofType="com.lyentech.bdc.md.auth.model.param.GroupAuthParam" property="groupLists">
+            <result column="id" jdbcType="BIGINT" property="id"/>
+            <result column="name" jdbcType="VARCHAR" property="name"/>
+            <result column="authStatus" jdbcType="BOOLEAN" property="authStatus"/>
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        , name, description, create_time, update_time
+    </sql>
+
+
+    <select id="getAuthId" resultType="java.lang.Long">
+        SELECT ma.id as id
+        FROM md_role_auth mra
+                 JOIN md_auth ma ON mra.auth_id = ma.id
+        WHERE mra.role_id = #{roleId}
+    </select>
+
+    <select id="getGroupAuth" resultMap="GroupAuthMap">
+        SELECT ma.id AS id, ma.name AS NAME, ma.`status` AS authStatus, mp.name AS groupName, mp.id AS groupId
+        FROM md_auth ma
+                 LEFT JOIN md_auth_group mag ON ma.id = mag.auth_id
+                 LEFT JOIN md_group mp ON mag.group_id = mp.id
+        WHERE ma.app_id = #{appId}
+        ORDER BY mp.sort ASC
+    </select>
+
+    <select id="getAuthTree" resultMap="GroupAuthMap">
+        SELECT ma.id AS id, ma.name AS NAME, ma.`status` AS authStatus, mp.name AS groupName, mp.id AS groupId
+        FROM md_role_auth mra
+                 JOIN md_auth ma ON mra.auth_id = ma.id
+                 LEFT JOIN md_auth_group mag ON ma.id = mag.auth_id
+                 LEFT JOIN md_group mp ON mag.group_id = mp.id
+        WHERE mra.role_id = #{roleId}
+        and ma.status = 1
+        ORDER BY mp.sort ASC
+    </select>
+
+    <select id="getAuthNum" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM md_auth ma
+                 LEFT JOIN md_auth_group mag ON ma.id = mag.auth_id
+        WHERE mag.group_id = #{groupId}
+          and ma.status = 1;
+    </select>
+</mapper>

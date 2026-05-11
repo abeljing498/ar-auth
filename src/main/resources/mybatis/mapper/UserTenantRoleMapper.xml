@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.UserTenantRoleMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.UserTenantRole">
+        <result column="user_id" property="userId" />
+        <result column="role_id" property="roleId" />
+        <result column="tenant_id" property="tenantId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        user_id, role_id, tenant_id
+    </sql>
+    <insert id="insertList">
+        INSERT INTO md_user_tenant_role
+        (user_id, role_id, tenant_id, app_id)
+        VALUES
+        <foreach collection="roleUserList" item="roleUser" close="" open="" separator="," >
+            (#{roleUser.userId}, #{roleUser.roleId}, #{roleUser.tenantId}, #{roleUser.appId})
+        </foreach>
+    </insert>
+
+    <resultMap id="rpmResultMap" type="com.lyentech.bdc.md.auth.model.entity.MdRole">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <collection property="permissions" column="id"
+                    select="com.lyentech.bdc.md.auth.dao.MdPermissionMapper.getByRoleId"/>
+        <collection property="menus" column="id" select="com.lyentech.bdc.md.auth.dao.MdMenuMapper.getByRoleId"/>
+    </resultMap>
+
+    <select id="getByAppIdAndTenantId" resultMap="rpmResultMap">
+        SELECT id, name
+        FROM
+        md_role r
+        LEFT JOIN md_tenant_role mtr ON (r.id = mtr.role_id)
+        WHERE r.status = 1 AND mtr.app_id = #{appId} AND mtr.tenant_id IN
+        <foreach collection="tenantIds" item="id" index="index" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="getByTenantIdAndRoleId" resultMap="rpmResultMap">
+        SELECT id, name
+        FROM md_role r
+                 LEFT JOIN md_tenant_role mtr ON (r.id = mtr.role_id)
+        WHERE r.status = 1
+          AND mtr.app_id = #{appId}
+          AND mtr.tenant_id = #{tenantId}
+          AND mtr.role_id = #{roleId}
+    </select>
+
+    <select id="getUserByRoleId" resultType="com.lyentech.bdc.md.auth.model.vo.MdUserVO">
+        SELECT mu.id as id, mu.nickname as nickname, mu.email as email
+        ,IF(LENGTH(mu.phone) = 11,CONCAT(SUBSTRING(mu.phone, 1, 3), '****', SUBSTRING(mu.phone, 8, 4)), mu.phone) AS phone
+        FROM md_user_tenant_role muor
+        RIGHT JOIN md_user mu ON muor.user_id = mu.id
+        WHERE muor.role_id = #{roleId}
+        <if test="nickname != null and nickname != ''">
+            AND (LOWER(mu.nickname) like (concat('%', #{nickname},'%')) OR UPPER(mu.nickname) like (concat('%',#{nickname},'%')))
+        </if>
+        GROUP BY mu.id
+        ORDER BY mu.create_time DESC
+    </select>
+
+    <select id="getUserNumByRoleId" resultType="java.lang.Long">
+        SELECT muor.user_id
+        FROM md_user_tenant_role muor
+                 RIGHT JOIN md_user mu ON muor.user_id = mu.id
+        WHERE muor.role_id = #{roleId}
+        GROUP BY mu.id
+    </select>
+    <select id="getRoleListByUserId" resultType="com.lyentech.bdc.md.auth.model.vo.RoleVO">
+        SELECT mr.id as id , name as name
+        FROM md_role mr
+        LEFT JOIN `md_user_tenant_role` mtr ON mtr.role_id = mr.id
+        WHERE mtr.app_id = #{appId}
+        AND mtr.tenant_id = #{tenantId}
+        AND mtr.user_id = #{userId}
+        AND mr.status=1
+    </select>
+    <select id="getRoleListByTenantAndUserId" resultType="com.lyentech.bdc.md.auth.model.vo.RoleVO">
+        SELECT B.id,B.name FROM `md_user_tenant_role` A LEFT JOIN `md_role` B on A.role_id=B.id
+        where B.status=1 and  A.tenant_id=#{tenantId} and A.user_id=#{userId} and A.app_id=#{appId}
+    </select>
+</mapper>

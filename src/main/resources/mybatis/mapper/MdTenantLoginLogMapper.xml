@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdTenantLoginLogMapper">
+
+    <select id="selectLoginLog" resultType="com.lyentech.bdc.md.auth.model.vo.TenantLoginLogVO">
+        SELECT mll.user_id as userId, mll.browser as browser, mll.operate_system as operateSystem,
+        mll.create_time as createTime, mu.nickname as userName, mll.ip as region, mll.login_way as loginWay,
+        mll.tenant_id tenantId,mll.tenant_name tenantName
+        FROM md_tenant_login_log mll
+        LEFT JOIN md_user mu ON mll.user_id = mu.id
+        WHERE mll.app_id = #{loginLogParam.appKey}
+        <if test="loginLogParam.tenantId != null and loginLogParam.tenantId != ''">
+            AND mll.tenant_id = #{loginLogParam.tenantId}
+        </if>
+        <if test="loginLogParam.beginTime != null and loginLogParam.beginTime != ''">
+            AND mll.create_time > #{loginLogParam.beginTime}
+        </if>
+        <if test="loginLogParam.endTime != null and loginLogParam.endTime != ''">
+            AND #{loginLogParam.endTime} > mll.create_time
+        </if>
+        <if test="loginLogParam.id != null and loginLogParam.id != ''">
+            AND mll.user_id = #{loginLogParam.id}
+        </if>
+        <if test="loginLogParam.user != null and loginLogParam.user != ''">
+            AND (mu.nickname like concat('%',#{loginLogParam.user},'%')
+            OR mu.nickname like LOWER (concat('%',#{loginLogParam.user},'%'))
+            OR mu.nickname like UPPER (concat('%',#{loginLogParam.user},'%')))
+        </if>
+<!--        <if test="loginLogParam.loginWay != null and loginLogParam.loginWay != ''">-->
+<!--            AND mll.login_way = #{loginLogParam.loginWay}-->
+<!--        </if>-->
+        <if test="loginLogParam.loginWay != null and loginLogParam.loginWay.trim() != ''">
+            <bind name="ways" value="loginLogParam.loginWay.split(',')" />
+            AND mll.login_way IN
+            <foreach collection="ways" item="way" open="(" separator="," close=")">
+                #{way}
+            </foreach>
+        </if>
+        ORDER BY mll.create_time DESC
+
+    </select>
+</mapper>

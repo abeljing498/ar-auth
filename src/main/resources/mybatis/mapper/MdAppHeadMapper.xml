@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdAppHeadMapper">
+    <resultMap id="MdAppHeadMap" type="com.lyentech.bdc.md.auth.model.param.HeadParam">
+        <result column="name" jdbcType="VARCHAR" property="headName"/>
+        <result column="email" jdbcType="VARCHAR" property="headEmail"/>
+        <result column="phone" jdbcType="VARCHAR" property="headPhone"/>
+    </resultMap>
+    <sql id="md_app_head_table">
+        md_app_head
+    </sql>
+
+    <select id="getHead" parameterType="string" resultMap="MdAppHeadMap">
+        SELECT name,phone,email
+        FROM
+        <include refid="md_app_head_table"/>
+        WHERE app_id = #{id}
+    </select>
+</mapper>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdLoginLogMapper">
+
+    <select id="selectLoginLog" resultType="com.lyentech.bdc.md.auth.model.vo.LoginLogVO">
+        SELECT mll.user_id as userId, mll.browser as browser, mll.operate_system as operateSystem,
+        mll.create_time as createTime, mu.nickname as userName, mll.ip as region, mll.login_way as loginWay
+        FROM md_login_log mll
+        LEFT JOIN md_user mu ON mll.user_id = mu.id
+        WHERE mll.app_id = #{loginLogParam.appKey}
+        AND is_success=1
+        <if test="loginLogParam.beginTime != null and loginLogParam.beginTime != ''">
+            AND mll.create_time > #{loginLogParam.beginTime}
+        </if>
+        <if test="loginLogParam.endTime != null and loginLogParam.endTime != ''">
+            AND #{loginLogParam.endTime} > mll.create_time
+        </if>
+        <if test="loginLogParam.id != null and loginLogParam.id != ''">
+            AND mll.user_id = #{loginLogParam.id}
+        </if>
+        <if test="loginLogParam.user != null and loginLogParam.user != ''">
+            AND mu.nickname = #{loginLogParam.user}
+        </if>
+<!--        <if test="loginLogParam.loginWay != null and loginLogParam.loginWay != ''">-->
+<!--            AND mll.login_way = #{loginLogParam.loginWay}-->
+<!--        </if>-->
+        <if test="loginLogParam.loginWay != null and loginLogParam.loginWay.trim() != ''">
+            <bind name="ways" value="loginLogParam.loginWay.split(',')" />
+            AND mll.login_way IN
+            <foreach collection="ways" item="way" open="(" separator="," close=")">
+                #{way}
+            </foreach>
+        </if>
+        ORDER BY mll.create_time DESC
+
+    </select>
+</mapper>

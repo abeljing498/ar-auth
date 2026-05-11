@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdPermissionMapper">
+
+    <sql id="md_permission_table">
+        md_permission
+    </sql>
+
+    <select id="getByRoleId" parameterType="long" resultType="string">
+        SELECT concat(p.path, '@USE@', p.method)
+        FROM
+        <include refid="md_permission_table"/>
+        p
+        LEFT JOIN md_auth_menu_permission mamp ON (p.id = mamp.permission_id)
+        LEFT JOIN md_role_auth mra ON (mamp.auth_id = mra.auth_id)
+        LEFT JOIN md_auth ma ON (mra.auth_id = ma.id)
+        WHERE mra.role_id = #{roleId} AND ma.status = 1
+        GROUP BY p.id
+    </select>
+    <select id="getByAppId" resultType="java.lang.String">
+        SELECT concat(p.path, '@USE@', p.method)
+        FROM
+        <include refid="md_permission_table"/>
+        p
+        WHERE p.app_id = #{appId}
+        <if test="opened != null">
+            AND p.is_opened = #{opened}
+        </if>
+    </select>
+    <select id="getByPermission" resultType="java.lang.Long">
+        SELECT mutr.tenant_id
+        FROM
+        <include refid="md_permission_table"/>
+        p
+        LEFT JOIN md_auth_menu_permission mamp ON (p.id = mamp.permission_id)
+        LEFT JOIN md_role_auth mra ON (mamp.auth_id = mra.auth_id)
+        LEFT JOIN md_user_tenant_role mutr ON (mra.role_id = mutr.role_id)
+        LEFT JOIN md_role mr ON (mutr.role_id = mr.id)
+        WHERE p.path = #{path} AND mutr.app_id = #{appId} AND mutr.user_id = #{userId} AND mr.status = 1
+    </select>
+
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdRoleMapper">
+
+    <sql id="md_role_table">
+        md_role
+    </sql>
+
+    <select id="getCount" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM md_role mr
+        LEFT JOIN md_tenant_role  mtr ON mr.id = mtr.role_id
+        WHERE mtr.tenant_id = #{tenantId}
+        AND mtr.app_id = #{appId}
+        AND mr.name = #{roleName}
+    </select>
+
+    <select id="getCountRole" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM md_role mr
+        LEFT JOIN md_tenant_role  mtr ON mr.id = mtr.role_id
+        WHERE mtr.tenant_id = #{tenantId}
+        AND mtr.role_id != #{roleId}
+        AND mtr.app_id = #{appId}
+        AND mr.name = #{roleName}
+    </select>
+
+</mapper>

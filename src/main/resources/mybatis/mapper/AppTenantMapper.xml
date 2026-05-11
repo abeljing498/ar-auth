@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.AppTenantMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.lyentech.bdc.md.auth.model.entity.AppTenant">
+        <result column="app_id" property="appId" />
+        <result column="tenant_id" property="tenantId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        app_id, tenant_id
+    </sql>
+    <select id="getListByAppId" resultType="com.lyentech.bdc.md.auth.model.vo.TenantVO">
+        SELECT mt.id,mt.name,mt.description
+        FROM md_app_tenant mat
+        LEFT JOIN md_tenant mt ON mat.tenant_id = mt.id
+        WHERE mat.app_id = #{appId} AND mt.status = 1
+        ORDER BY mt.create_time DESC
+    </select>
+
+    <select id="getTenantByAppId" resultType="com.lyentech.bdc.md.auth.model.vo.TenantVO">
+        SELECT mt.id, mt.name, mt.description
+        FROM md_app_tenant mat
+                 LEFT JOIN md_tenant mt ON mat.tenant_id = mt.id
+        WHERE mat.app_id = #{appId}
+        ORDER BY mt.create_time DESC
+    </select>
+
+</mapper>

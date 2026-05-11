@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lyentech.bdc.md.auth.dao.MdBlackLogMapper">
+    <select id="getBlackList" resultType="com.lyentech.bdc.md.auth.model.vo.MdBlackLogVO">
+        SELECT mbl.operator_id as oid, mbl.reason AS reason, mbl.id AS id,mbl.operator_nickname AS operName,mbl.type as
+        type ,mbl.create_time as createTime
+        FROM md_black_log mbl
+        WHERE mbl.app_id = #{blackLogParam.appId} AND mbl.user_id = #{blackLogParam.userId}
+        <if test="blackLogParam.beginTime != null and blackLogParam.beginTime != ''">
+            AND mbl.create_time > #{blackLogParam.beginTime}
+        </if>
+        <if test="blackLogParam.endTime != null and blackLogParam.endTime != ''">
+            AND #{blackLogParam.endTime} > mb;.create_time
+        </if>
+        <if test="blackLogParam.reason != null and blackLogParam.reason != ''">
+            AND mbl.type = #{blackLogParam.type}
+        </if>
+        ORDER BY mbl.create_time DESC
+    </select>
+</mapper>
